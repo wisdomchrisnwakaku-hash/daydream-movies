@@ -87,7 +87,7 @@ export const useStreamAPI = () => {
           height: { ideal: 720 },
           frameRate: { ideal: 30 }
         },
-        audio: false
+        audio: true
       })
       
       setLocalStream(stream)

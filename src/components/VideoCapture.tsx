@@ -18,9 +18,9 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
   if (!streamData) return null
 
   return (
-    <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50">
+    <Card className="shadow-lg border-0 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800">
+        <CardTitle className="flex items-center gap-3 text-xl font-bold text-gray-800 dark:text-white">
           <span className="text-2xl">📹</span>
           Video & AI Output
         </CardTitle>
@@ -30,21 +30,21 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
           {/* Input Video */}
           <div className="space-y-3">
             <div className="relative">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full"></span>
                 Camera Input
               </h3>
-              <div className="video-container relative overflow-hidden rounded-xl shadow-lg border-2 border-gray-200">
+              <div className="video-container relative overflow-hidden rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700">
                 <video 
                   ref={localVideoRef}
                   autoPlay 
                   muted 
                   playsInline 
-                  className="w-full bg-gray-100 h-64 object-cover"
+                  className="w-full bg-gray-100 dark:bg-gray-800 h-64 object-cover"
                 />
                 {!localStream && (
-                  <div className="absolute inset-0 bg-gray-100 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
+                  <div className="absolute inset-0 bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <div className="text-center text-gray-500 dark:text-gray-400">
                       <div className="text-3xl mb-2">📷</div>
                       <div className="text-sm font-medium">Camera feed will appear here</div>
                       <div className="text-xs mt-1">Start camera to begin</div>
@@ -58,11 +58,11 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
           {/* AI Output */}
           <div className="space-y-3">
             <div className="relative">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
                 AI Generated Output
               </h3>
-              <div className="video-container relative overflow-hidden rounded-xl shadow-lg border-2 border-gray-200">
+              <div className="video-container relative overflow-hidden rounded-xl shadow-lg border-2 border-gray-200 dark:border-gray-700">
                 {streamData?.output_playback_id ? (
                   <iframe 
                     ref={outputPlayerRef}
@@ -71,11 +71,11 @@ const VideoCapture: React.FC<VideoCaptureProps> = ({
                     allowFullScreen 
                     sandbox="allow-scripts allow-same-origin allow-presentation"
                     referrerPolicy="no-referrer-when-downgrade"
-                    className="w-full bg-gray-100 h-64"
+                    className="w-full bg-gray-100 dark:bg-gray-800 h-64"
                   />
                 ) : (
-                  <div className="w-full bg-gradient-to-br from-gray-100 to-gray-200 h-64 flex items-center justify-center">
-                    <div className="text-center text-gray-500">
+                  <div className="w-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900 h-64 flex items-center justify-center">
+                    <div className="text-center text-gray-500 dark:text-gray-400">
                       <div className="text-3xl mb-2">✨</div>
                       <div className="text-sm font-medium">AI Output will appear here</div>
                       <div className="text-xs mt-1">Start streaming to see results</div>
