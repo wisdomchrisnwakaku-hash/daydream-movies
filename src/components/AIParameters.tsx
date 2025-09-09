@@ -56,202 +56,163 @@ const AIParameters: React.FC<AIParametersProps> = ({
 
   return (
     <div className="p-2 space-y-2">
-          
-            {/* Inference Steps Section */}
+      {/* Image Quality */}
       <div className="p-2 bg-orange-50 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
         <Label htmlFor="inferenceSteps" className="flex items-center gap-1 text-xs font-semibold text-orange-800 dark:text-orange-300 mb-1">
-                ⚡ Steps
-                <span className="relative group cursor-help">
-            <span className="text-orange-500 text-xs">ℹ️</span>
-                  <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                    Higher = better quality but slower, lower = faster but lower quality
-                  </div>
-                </span>
-              </Label>
+          Inference (Steps)
+        </Label>
         <div className="flex items-center gap-1">
-                <Slider
-                  id="inferenceSteps"
-                  min={10}
-                  max={100}
-                  value={[inferenceSteps]}
-                  onValueChange={(value) => setInferenceSteps(value[0])}
-                  className="flex-1"
-                />
+          <Slider
+            id="inferenceSteps"
+            min={10}
+            max={100}
+            value={[inferenceSteps]}
+            onValueChange={(value) => setInferenceSteps(value[0])}
+            className="flex-1"
+          />
           <span className="text-xs font-bold text-orange-700 dark:text-orange-300 min-w-[2rem] text-center bg-white dark:bg-gray-800 px-1 py-0.5 rounded border border-orange-300 dark:border-orange-700">{inferenceSteps}</span>
-              </div>
-            </div>
-            
-            
-                {/* Pose ControlNet */}
-          <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-            <div className="flex items-center gap-1 mb-1">
-                    <Checkbox
-                      id="poseEnabled"
-                      checked={poseEnabled}
-                      onCheckedChange={(checked) => setPoseEnabled(checked as boolean)}
-                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
-                    />
-              <Label htmlFor="poseEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                🤸 Pose
-                      <span className="relative group cursor-help">
-                  <span className="text-blue-500 text-xs">ℹ️</span>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                          Preserves body poses and movements
-                        </div>
-                      </span>
-                    </Label>
-                  </div>
-            <div className="flex items-center gap-1">
-                    <Slider
-                      id="poseScale"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[poseScale]}
-                      onValueChange={(value) => setPoseScale(value[0])}
-                      className="flex-1"
-                      disabled={!poseEnabled}
-                    />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{poseScale.toFixed(2)}</span>
-                  </div>
-                </div>
+        </div>
+      </div>
 
-                {/* HED ControlNet */}
-          <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-            <div className="flex items-center gap-1 mb-1">
-                    <Checkbox
-                      id="hedEnabled"
-                      checked={hedEnabled}
-                      onCheckedChange={(checked) => setHedEnabled(checked as boolean)}
-                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
-                    />
-              <Label htmlFor="hedEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                🎨 HED
-                      <span className="relative group cursor-help">
-                  <span className="text-blue-500 text-xs">ℹ️</span>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                          Preserves soft edges and contours
-                        </div>
-                      </span>
-                    </Label>
-                  </div>
-            <div className="flex items-center gap-1">
-                    <Slider
-                      id="hedScale"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[hedScale]}
-                      onValueChange={(value) => setHedScale(value[0])}
-                      className="flex-1"
-                      disabled={!hedEnabled}
-                    />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{hedScale.toFixed(2)}</span>
-                  </div>
-                </div>
+      {/* Pose Preservation */}
+      <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-1 mb-1">
+          <Checkbox
+            id="poseEnabled"
+            checked={poseEnabled}
+            onCheckedChange={(checked) => setPoseEnabled(checked as boolean)}
+            className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
+          />
+          <Label htmlFor="poseEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Preserve Pose
+          </Label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Slider
+            id="poseScale"
+            min={0}
+            max={1}
+            step={0.01}
+            value={[poseScale]}
+            onValueChange={(value) => setPoseScale(value[0])}
+            className="flex-1"
+            disabled={!poseEnabled}
+          />
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{poseScale.toFixed(2)}</span>
+        </div>
+      </div>
 
-                {/* Canny ControlNet */}
-          <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-            <div className="flex items-center gap-1 mb-1">
-                    <Checkbox
-                      id="cannyEnabled"
-                      checked={cannyEnabled}
-                      onCheckedChange={(checked) => setCannyEnabled(checked as boolean)}
-                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
-                    />
-              <Label htmlFor="cannyEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                ✂️ Canny
-                      <span className="relative group cursor-help">
-                  <span className="text-blue-500 text-xs">ℹ️</span>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                          Preserves sharp edges and outlines
-                        </div>
-                      </span>
-                    </Label>
-                  </div>
-            <div className="flex items-center gap-1">
-                    <Slider
-                      id="cannyScale"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[cannyScale]}
-                      onValueChange={(value) => setCannyScale(value[0])}
-                      className="flex-1"
-                      disabled={!cannyEnabled}
-                    />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{cannyScale.toFixed(2)}</span>
-                  </div>
-                </div>
+      {/* Soft Edges (HED) */}
+      <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-1 mb-1">
+          <Checkbox
+            id="hedEnabled"
+            checked={hedEnabled}
+            onCheckedChange={(checked) => setHedEnabled(checked as boolean)}
+            className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
+          />
+          <Label htmlFor="hedEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Preserve Soft Edges
+          </Label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Slider
+            id="hedScale"
+            min={0}
+            max={1}
+            step={0.01}
+            value={[hedScale]}
+            onValueChange={(value) => setHedScale(value[0])}
+            className="flex-1"
+            disabled={!hedEnabled}
+          />
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{hedScale.toFixed(2)}</span>
+        </div>
+      </div>
 
-                {/* Depth ControlNet */}
-          <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-            <div className="flex items-center gap-1 mb-1">
-                    <Checkbox
-                      id="depthEnabled"
-                      checked={depthEnabled}
-                      onCheckedChange={(checked) => setDepthEnabled(checked as boolean)}
-                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
-                    />
-              <Label htmlFor="depthEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                🏔️ Depth
-                      <span className="relative group cursor-help">
-                  <span className="text-blue-500 text-xs">ℹ️</span>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                          Preserves 3D depth and spatial relationships
-                        </div>
-                      </span>
-                    </Label>
-                  </div>
-            <div className="flex items-center gap-1">
-                    <Slider
-                      id="depthScale"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[depthScale]}
-                      onValueChange={(value) => setDepthScale(value[0])}
-                      className="flex-1"
-                      disabled={!depthEnabled}
-                    />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{depthScale.toFixed(2)}</span>
-                  </div>
-                </div>
+      {/* Sharp Edges (Canny) */}
+      <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-1 mb-1">
+          <Checkbox
+            id="cannyEnabled"
+            checked={cannyEnabled}
+            onCheckedChange={(checked) => setCannyEnabled(checked as boolean)}
+            className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
+          />
+          <Label htmlFor="cannyEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Preserve Sharp Edges
+          </Label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Slider
+            id="cannyScale"
+            min={0}
+            max={1}
+            step={0.01}
+            value={[cannyScale]}
+            onValueChange={(value) => setCannyScale(value[0])}
+            className="flex-1"
+            disabled={!cannyEnabled}
+          />
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{cannyScale.toFixed(2)}</span>
+        </div>
+      </div>
 
-                {/* Color ControlNet */}
-          <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
-            <div className="flex items-center gap-1 mb-1">
-                    <Checkbox
-                      id="colorEnabled"
-                      checked={colorEnabled}
-                      onCheckedChange={(checked) => setColorEnabled(checked as boolean)}
-                      className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
-                    />
-              <Label htmlFor="colorEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
-                🎨 Color
-                      <span className="relative group cursor-help">
-                  <span className="text-blue-500 text-xs">ℹ️</span>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                          Preserves original colors and lighting
-                        </div>
-                      </span>
-                    </Label>
-                  </div>
-            <div className="flex items-center gap-1">
-                    <Slider
-                      id="colorScale"
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[colorScale]}
-                      onValueChange={(value) => setColorScale(value[0])}
-                      className="flex-1"
-                      disabled={!colorEnabled}
-                    />
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{colorScale.toFixed(2)}</span>
-            </div>
-          </div>
-        
+      {/* Depth Preservation */}
+      <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-1 mb-1">
+          <Checkbox
+            id="depthEnabled"
+            checked={depthEnabled}
+            onCheckedChange={(checked) => setDepthEnabled(checked as boolean)}
+            className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
+          />
+          <Label htmlFor="depthEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Preserve Depth
+          </Label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Slider
+            id="depthScale"
+            min={0}
+            max={1}
+            step={0.01}
+            value={[depthScale]}
+            onValueChange={(value) => setDepthScale(value[0])}
+            className="flex-1"
+            disabled={!depthEnabled}
+          />
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{depthScale.toFixed(2)}</span>
+        </div>
+      </div>
+
+      {/* Color Preservation */}
+      <div className="p-1.5 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+        <div className="flex items-center gap-1 mb-1">
+          <Checkbox
+            id="colorEnabled"
+            checked={colorEnabled}
+            onCheckedChange={(checked) => setColorEnabled(checked as boolean)}
+            className="data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600 w-3 h-3"
+          />
+          <Label htmlFor="colorEnabled" className="flex items-center gap-1 text-xs font-semibold text-gray-700 dark:text-gray-300">
+            Preserve Color & Lighting
+          </Label>
+        </div>
+        <div className="flex items-center gap-1">
+          <Slider
+            id="colorScale"
+            min={0}
+            max={1}
+            step={0.01}
+            value={[colorScale]}
+            onValueChange={(value) => setColorScale(value[0])}
+            className="flex-1"
+            disabled={!colorEnabled}
+          />
+          <span className="text-xs font-bold text-gray-700 dark:text-gray-300 min-w-[2rem] text-center bg-gray-100 dark:bg-gray-600 px-1 py-0.5 rounded border">{colorScale.toFixed(2)}</span>
+        </div>
+      </div>
     </div>
   )
 }

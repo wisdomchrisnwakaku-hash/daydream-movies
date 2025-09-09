@@ -5,13 +5,13 @@ import ReusableFooter from '@/components/ReusableFooter'
 import AIParameters from '@/components/AIParameters'
 import StreamControls from '@/components/StreamControls'
 import AlertSystem from '@/components/AlertSystem'
+import AudioFeaturesDisplay from '@/components/AudioFeaturesDisplay'
 import { useStreamAPI } from '@/hooks/useStreamAPI'
 import { useTheme } from '@/contexts/ThemeContext'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { 
-  Camera, 
-  Download
+  Camera
 } from 'lucide-react'
 
 const Studio: React.FC = () => {
@@ -61,6 +61,17 @@ const Studio: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false)
   const audioContextRef = useRef<AudioContext | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
+  
+  // Audio features state
+  const [audioFeatures, setAudioFeatures] = useState({
+    volume: 0,
+    pitch: 0,
+    emotion: 'neutral',
+    confidence: 0,
+    visualStyle: '',
+    wpm: 0,
+    transcript: ''
+  })
 
   const generateRandomSeed = () => {
     const randomSeed = Math.floor(Math.random() * 999999)
@@ -118,12 +129,20 @@ const Studio: React.FC = () => {
     
     socketInstance.on('transcription-result', (data) => {
       addDebugLog('Transcription result received', data)
-      if (data.text && data.text.trim()) {
-        // Set only the current transcription, no preservation
+      
+      // Only update prompt on final transcripts (pause detected)
+      if (data.message_type === 'final_transcript' && data.text && data.text.trim()) {
         setPrompt(data.text)
-        addDebugLog('Transcription updated', { newText: data.text })
+        addDebugLog('Final transcription updated', { newText: data.text })
+        if (data.wpm) {
+          addDebugLog('🗣️ Speech Rate:', data.wpm.toFixed(1) + ' WPM')
+          console.log('🗣️ Speech Rate:', data.wpm.toFixed(1) + ' WPM')
+        }
+      } else if (data.message_type === 'partial_transcript') {
+        // Just log partial transcripts for debugging, don't update prompt
+        addDebugLog('Partial transcription received', { partialText: data.text })
       } else {
-        addDebugLog('Empty transcription result received', data)
+        addDebugLog('Empty or unknown transcription result received', data)
       }
     })
     
@@ -145,6 +164,62 @@ const Studio: React.FC = () => {
     socketInstance.on('transcription-closed', () => {
       addDebugLog('Transcription closed event received')
       setIsListening(false)
+    })
+    
+    // Audio volume events
+    socketInstance.on('audio-volume', (data) => {
+      addDebugLog('🔊 Audio Volume:', data.volume.toFixed(2))
+      console.log('🔊 Audio Volume:', data.volume.toFixed(2))
+      if (data.pitch) {
+        addDebugLog('🎵 Audio Pitch:', data.pitch.toFixed(1) + ' Hz')
+        console.log('🎵 Audio Pitch:', data.pitch.toFixed(1) + ' Hz')
+      }
+      
+      // Update audio features state
+      setAudioFeatures(prev => ({
+        ...prev,
+        volume: data.volume,
+        pitch: data.pitch || prev.pitch
+      }))
+    })
+    
+    // Audio tone/emotion events (DIY emotion detection)
+    socketInstance.on('audio-tone', (data) => {
+      addDebugLog('😊 Emotion:', data.emotion + ' (' + data.confidence.toFixed(2) + ')')
+      console.log('😊 Emotion:', data.emotion + ' (' + data.confidence.toFixed(2) + ')')
+      console.log('🎨 Visual Style:', data.visualStyle)
+      console.log('📊 Features:', {
+        volume: data.features.volume.toFixed(2),
+        pitch: data.features.pitch.toFixed(1) + ' Hz',
+        wpm: data.features.wpm.toFixed(1)
+      })
+      if (data.transcript) {
+        console.log('🎯 For transcript:', data.transcript)
+      }
+      
+      // Update audio features state with transcript-specific data
+      setAudioFeatures(prev => ({
+        ...prev,
+        emotion: data.emotion,
+        confidence: data.confidence,
+        visualStyle: data.visualStyle,
+        volume: data.features.volume,
+        pitch: data.features.pitch,
+        wpm: data.features.wpm,
+        transcript: data.transcript || prev.transcript
+      }))
+    })
+    
+    // Audio sentiment from AssemblyAI API (fallback)
+    socketInstance.on('audio-sentiment-api', (data) => {
+      addDebugLog('😊 Sentiment (API):', data.sentiment)
+      console.log('😊 Sentiment (API):', data.sentiment)
+    })
+    
+    // Audio stats from AssemblyAI
+    socketInstance.on('audio-stats', (data) => {
+      addDebugLog('📊 Audio Stats Volume:', data.volume)
+      console.log('📊 Audio Stats Volume:', data.volume)
     })
     
     setSocket(socketInstance)
@@ -344,14 +419,14 @@ const Studio: React.FC = () => {
 
   // Auto-update parameters when prompt changes
   useEffect(() => {
-    if (prompt.trim() && streamData) {
+    if (prompt.trim()) {
       const timeoutId = setTimeout(() => {
         handleUpdateParameters()
       }, 1000) // Debounce for 1 second
       
       return () => clearTimeout(timeoutId)
     }
-  }, [prompt, streamData])
+  }, [prompt]) // only re-run when prompt changes
 
   const handleUpdateParameters = async () => {
     const params = {
@@ -363,7 +438,7 @@ const Studio: React.FC = () => {
         prompt_interpolation_method: "slerp",
         normalize_prompt_weights: true,
         normalize_seed_weights: true,
-        negative_prompt: "blurry, low quality, flat, 2d",
+        negative_prompt: 'Low quality, blurry, distorted',
         num_inference_steps: inferenceSteps,
         seed: seed,
         t_index_list: [0, 8, 17],
@@ -419,6 +494,10 @@ const Studio: React.FC = () => {
         ]
       }
     }
+    
+    // Log the parameters being sent
+    console.log('🎨 Sending parameters to Daydream API:');
+    console.log('📝 Prompt:', prompt);
     
     await updateParameters(params)
   }
@@ -595,7 +674,20 @@ const Studio: React.FC = () => {
         {/* Right Sidebar - AI Parameters and Controls */}
         <div className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border-l w-80 flex flex-col`}>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto p-4">
+            {/* Audio Features Display */}
+            <AudioFeaturesDisplay
+              volume={audioFeatures.volume}
+              pitch={audioFeatures.pitch}
+              emotion={audioFeatures.emotion}
+              confidence={audioFeatures.confidence}
+              visualStyle={audioFeatures.visualStyle}
+              wpm={audioFeatures.wpm}
+              transcript={audioFeatures.transcript}
+              isListening={isListening}
+              theme={theme}
+            />
+            
             <AIParameters
               inferenceSteps={inferenceSteps}
               setInferenceSteps={setInferenceSteps}
