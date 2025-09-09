@@ -10,6 +10,9 @@ export const useStreamAPI = () => {
   const [alerts, setAlerts] = useState<AlertState[]>([])
   const [streamCreationStatus, setStreamCreationStatus] = useState("Ready to create stream")
   const [outputStatus, setOutputStatus] = useState("Output will appear here after creating a stream")
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingStatus, setRecordingStatus] = useState("Ready to record")
+  const [recordingSessionId, setRecordingSessionId] = useState<string | null>(null)
   
   const localVideoRef = useRef<HTMLVideoElement>(null)
   const outputPlayerRef = useRef<HTMLIFrameElement>(null)
@@ -210,6 +213,124 @@ export const useStreamAPI = () => {
     }
   }
 
+  const startRecording = async () => {
+    if (!streamData || !streamData.output_playback_id) {
+      setRecordingStatus("No stream output available. Start streaming first.")
+      showAlert("No stream output available. Start streaming first.", 'error')
+      return
+    }
+    
+    try {
+      setRecordingStatus("Starting recording...")
+      
+      const sessionId = `session-${Date.now()}`
+      
+      // Try different stream URL formats for different stream types
+      let streamUrl = ''
+      let streamType = 'auto'
+      
+      // Try multiple stream URL formats
+      if (!streamData.output_playback_id) {
+        throw new Error('No stream output playback ID available')
+      }
+      
+      // Try different URL formats in order of preference
+      const streamFormats = [
+        { url: `https://lvpr.tv/v/${streamData.output_playback_id}.m3u8`, type: 'hls' },
+        { url: `https://lvpr.tv/v/${streamData.output_playback_id}/index.m3u8`, type: 'hls' },
+        { url: `https://lvpr.tv/v/${streamData.output_playback_id}/playlist.m3u8`, type: 'hls' },
+        { url: `https://lvpr.tv/v/${streamData.output_playback_id}`, type: 'auto' }
+      ]
+      
+      console.log('🎥 Available stream formats to try:', streamFormats.length)
+      
+      // Try recording with each format until one works
+      let recordingStarted = false
+      let lastError = null
+      
+      for (const format of streamFormats) {
+        try {
+          console.log(`🎥 Trying stream format: ${format.url} (${format.type})`)
+          
+          const response = await fetch('http://localhost:3001/api/recording/start', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              streamUrl: format.url,
+              sessionId: sessionId,
+              streamType: format.type
+            })
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            setIsRecording(true)
+            setRecordingSessionId(sessionId) // Store the session ID
+            setRecordingStatus(`Recording started: ${data.filename}`)
+            showAlert(`Recording started: ${data.filename}`, 'success')
+            recordingStarted = true
+            break
+          } else {
+            const errorData = await response.json()
+            lastError = errorData.error || `HTTP error! status: ${response.status}`
+            console.log(`❌ Failed with format ${format.type}:`, lastError)
+          }
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : 'Unknown error'
+          console.log(`❌ Error with format ${format.type}:`, lastError)
+        }
+      }
+      
+      if (!recordingStarted) {
+        throw new Error(`Failed to start recording with any stream format. Last error: ${lastError}`)
+      }
+      
+    } catch (error) {
+      console.error('Error starting recording:', error)
+      setRecordingStatus(`Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      showAlert(`Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+    }
+  }
+
+  const stopRecording = async () => {
+    if (!isRecording || !recordingSessionId) {
+      setRecordingStatus("No active recording to stop.")
+      return
+    }
+    
+    try {
+      setRecordingStatus("Stopping recording...")
+      
+      const response = await fetch('http://localhost:3001/api/recording/stop', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sessionId: recordingSessionId // Use the stored session ID
+        })
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      setIsRecording(false)
+      setRecordingSessionId(null) // Clear the session ID
+      setRecordingStatus(`Recording stopped: ${data.filename}`)
+      showAlert(`Recording stopped: ${data.filename}`, 'success')
+      
+    } catch (error) {
+      console.error('Error stopping recording:', error)
+      setRecordingStatus(`Failed to stop recording: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      showAlert(`Failed to stop recording: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error')
+    }
+  }
+
   return {
     streamData,
     localStream,
@@ -226,6 +347,11 @@ export const useStreamAPI = () => {
     stopStream,
     updateParameters,
     showAlert,
-    removeAlert
+    removeAlert,
+    isRecording,
+    recordingStatus,
+    startRecording,
+    stopRecording,
+    recordingSessionId
   }
 }

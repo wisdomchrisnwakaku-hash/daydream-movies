@@ -41,9 +41,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onTryApp }) => {
                 <span className="text-red-500">Instant Magic.</span>
               </h1>
               <p className={`text-xl ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-6 leading-relaxed`}>
-                REVOLUTIONARY STORYTELLING Daydream Movies transforms your words into cinematic masterpieces in real-time.
-                <br />
-                <span className="text-lg font-semibold">Speak → Watch → Amaze.</span>
+                REVOLUTIONARY STORYTELLING Vox transforms your words into cinematic masterpieces in real-time.
+                
               </p>
               <div className="flex items-center gap-4 mb-8">
                 <div className="flex items-center gap-2">
@@ -290,22 +289,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onTryApp }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
-                icon: "✅",
+                icon: <CheckCircle className="w-8 h-8 text-green-500 mx-auto" />,
                 title: "Unique & first-of-its-kind",
                 description: "No plugin, no clone, no gimmick."
               },
               {
-                icon: "✅",
+                icon: <CheckCircle className="w-8 h-8 text-green-500 mx-auto" />,
                 title: "Instant emotional payoff",
                 description: "Laughter, awe, surprise, all in seconds."
               },
               {
-                icon: "✅",
+                icon: <CheckCircle className="w-8 h-8 text-green-500 mx-auto" />,
                 title: "Versatility shown live",
                 description: "Kids, creators, gamers, educators. One engine, infinite modes."
               },
               {
-                icon: "✅",
+                icon: <CheckCircle className="w-8 h-8 text-green-500 mx-auto" />,
                 title: "Future-proof vision",
                 description: "Today: story scenes. Tomorrow: movies, classrooms, games."
               }
@@ -370,7 +369,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onTryApp }) => {
       {/* Call to Action Section */}
       <section className={`py-20 ${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="max-w-7xl mx-auto px-8 text-center">
-          <h2 className="text-4xl font-bold mb-8">🌟 Call to Action (Contest-Killer Line)</h2>
+          <h2 className="text-4xl font-bold mb-8">🌟 Call to Action</h2>
           <p className={`text-xl ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} mb-8`}>
             This isn't an app. It's a new medium.<br />
             Voice → Emotion → Story → Scene.
@@ -392,10 +391,10 @@ const LandingPage: React.FC<LandingPageProps> = ({ onTryApp }) => {
           
           <div className="mt-12 flex justify-center gap-4 overflow-x-auto">
             {[
-              "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=150&h=300&fit=crop",
-              "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=150&h=300&fit=crop",
-              "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=300&fit=crop",
-              "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=300&fit=crop"
+              "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=150&h=300&fit=crop&auto=format",
+              "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=150&h=300&fit=crop&auto=format",
+              "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=150&h=300&fit=crop&auto=format",
+              "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=150&h=300&fit=crop&auto=format"
             ].map((src, index) => (
               <img 
                 key={index}

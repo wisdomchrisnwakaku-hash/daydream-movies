@@ -55,10 +55,52 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   }
 }
 
 /* ControlNet item styles - no borders as requested */
 .controlnet-item {
   @apply bg-gray-50 p-4 rounded-lg transition-colors;
+}
+
+/* Hide scrollbar utility - comprehensive solution */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+  overflow-y: auto;
+}
+
+.scrollbar-hide::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar-track {
+  display: none;
+  background: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar-thumb {
+  display: none;
+  background: transparent;
+}
+
+.scrollbar-hide::-webkit-scrollbar-corner {
+  display: none;
+  background: transparent;
+}
+
+/* Alternative approach using Tailwind arbitrary values */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }

@@ -124,7 +124,7 @@ const Contact: React.FC = () => {
               <CardContent className="space-y-4">
                 <div>
                   <h4 className="font-semibold text-gray-800 dark:text-white">Email</h4>
-                  <p className="text-gray-600 dark:text-gray-300">hello@daydreammovies.com</p>
+                  <p className="text-gray-600 dark:text-gray-300">hello@vox.com</p>
                 </div>
                 <div>
                   <h4 className="font-semibold text-gray-800 dark:text-white">Phone</h4>

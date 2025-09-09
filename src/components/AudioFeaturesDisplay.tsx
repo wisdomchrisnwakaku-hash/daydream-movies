@@ -102,17 +102,6 @@ const AudioFeaturesDisplay: React.FC<AudioFeaturesDisplayProps> = ({
             <div className="ml-auto w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
           </div>
 
-          {/* Current Transcript */}
-          {transcript && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Current Speech:</span>
-              </div>
-              <div className="text-xs text-gray-700 dark:text-gray-300 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border-l-2 border-blue-500">
-                "{transcript}"
-              </div>
-            </div>
-          )}
 
           {/* Volume */}
           <div className="space-y-2">
@@ -172,18 +161,7 @@ const AudioFeaturesDisplay: React.FC<AudioFeaturesDisplayProps> = ({
             </div>
           </div>
 
-          {/* Visual Style */}
-          {visualStyle && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Palette className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Visual Style</span>
-              </div>
-              <div className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded">
-                {visualStyle}
-              </div>
-            </div>
-          )}
+         
         </div>
       </CardContent>
     </Card>

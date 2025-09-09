@@ -51,7 +51,6 @@ const Studio: React.FC = () => {
   const [colorScale, setColorScale] = useState(0)
 
   // Stream control states
-  const [isRecording, setIsRecording] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   
   // Speech-to-text states
@@ -61,6 +60,15 @@ const Studio: React.FC = () => {
   const [isConnected, setIsConnected] = useState(false)
   const audioContextRef = useRef<AudioContext | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
+  
+  // Video recording states
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingStatus, setRecordingStatus] = useState('Ready to record')
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null)
+  const [showRecordingGuide, setShowRecordingGuide] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const recordingStartTimeRef = useRef<number | null>(null)
+  const recordingDurationRef = useRef<number>(0)
   
   // Audio features state
   const [audioFeatures, setAudioFeatures] = useState({
@@ -137,6 +145,13 @@ const Studio: React.FC = () => {
         if (data.wpm) {
           addDebugLog('🗣️ Speech Rate:', data.wpm.toFixed(1) + ' WPM')
           console.log('🗣️ Speech Rate:', data.wpm.toFixed(1) + ' WPM')
+          
+          // Update WPM in audio features state
+          setAudioFeatures(prev => ({
+            ...prev,
+            wpm: data.wpm,
+            transcript: data.text
+          }))
         }
       } else if (data.message_type === 'partial_transcript') {
         // Just log partial transcripts for debugging, don't update prompt
@@ -175,11 +190,17 @@ const Studio: React.FC = () => {
         console.log('🎵 Audio Pitch:', data.pitch.toFixed(1) + ' Hz')
       }
       
-      // Update audio features state
+      // Update audio features state with real-time emotion data
       setAudioFeatures(prev => ({
         ...prev,
         volume: data.volume,
-        pitch: data.pitch || prev.pitch
+        pitch: data.pitch || prev.pitch,
+        // Update emotion data if available (real-time detection)
+        ...(data.emotion && {
+          emotion: data.emotion,
+          confidence: data.confidence || prev.confidence,
+          visualStyle: data.visualStyle || prev.visualStyle
+        })
       }))
     })
     
@@ -230,6 +251,18 @@ const Studio: React.FC = () => {
       socketInstance.close()
     }
   }, [])
+
+  // Cleanup recording on unmount
+  useEffect(() => {
+    return () => {
+      if (isRecording && mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop()
+      }
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl)
+      }
+    }
+  }, [isRecording, recordedVideoUrl])
 
   const startSpeechRecognition = async () => {
     if (!socket || isListening) return
@@ -382,6 +415,182 @@ const Studio: React.FC = () => {
     addDebugLog('Listening state set to false')
   }
 
+  // Video recording functions
+  const startIframeRecording = async () => {
+    if (!streamData?.output_playback_id || isRecording) {
+      console.log('Cannot start recording: no stream or already recording')
+      return
+    }
+
+    try {
+      addDebugLog('Starting iframe recording...')
+      
+      // Get the iframe element and its position
+      const iframe = outputPlayerRef.current
+      if (!iframe) {
+        throw new Error('Output player iframe not found')
+      }
+
+      const rect = iframe.getBoundingClientRect()
+      
+      // Show recording guide and highlight iframe
+      setShowRecordingGuide(true)
+      setRecordingStatus('Please select the AI video area to record...')
+      highlightIframeArea()
+      
+      // Request screen capture - user will select the area
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: rect.width },
+          height: { ideal: rect.height },
+          frameRate: { ideal: 30 }
+        },
+        audio: false
+      })
+
+      // Hide guide once recording starts
+      setShowRecordingGuide(false)
+      
+      addDebugLog('Screen capture stream obtained', { 
+        width: rect.width, 
+        height: rect.height,
+        trackCount: stream.getTracks().length 
+      })
+      
+      // Create MediaRecorder with the screen capture stream
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'video/webm;codecs=vp9'
+      })
+
+      const chunks: Blob[] = []
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunks.push(event.data)
+          addDebugLog('Recording chunk received', { size: event.data.size })
+        }
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/webm' })
+        const url = URL.createObjectURL(blob)
+        setRecordedVideoUrl(url)
+        setRecordingStatus(`Recording completed: ${(blob.size / 1024 / 1024).toFixed(2)} MB`)
+        addDebugLog('Recording completed', { size: blob.size, url })
+        
+        // Stop all tracks
+        stream.getTracks().forEach(track => track.stop())
+      }
+
+      mediaRecorder.onerror = (event) => {
+        console.error('MediaRecorder error:', event)
+        setRecordingStatus('Recording error occurred')
+        stream.getTracks().forEach(track => track.stop())
+        setShowRecordingGuide(false)
+      }
+
+      // Start recording
+      mediaRecorder.start(1000) // Collect data every second
+      mediaRecorderRef.current = mediaRecorder
+      recordingStartTimeRef.current = Date.now()
+      
+      setIsRecording(true)
+      setRecordingStatus('Recording AI video area...')
+      setRecordedVideoUrl(null)
+      
+      addDebugLog('Iframe recording started successfully')
+      
+    } catch (error) {
+      console.error('Error starting iframe recording:', error)
+      setShowRecordingGuide(false)
+      
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        setRecordingStatus('Screen capture permission denied. Please allow screen sharing to record.')
+      } else {
+        setRecordingStatus(`Failed to start recording: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      }
+    }
+  }
+
+
+  const stopVideoRecording = () => {
+    if (!mediaRecorderRef.current || !isRecording) {
+      console.log('No active recording to stop')
+      return
+    }
+
+    try {
+      addDebugLog('Stopping video recording...')
+      
+      mediaRecorderRef.current.stop()
+      mediaRecorderRef.current = null
+      
+      if (recordingStartTimeRef.current) {
+        recordingDurationRef.current = Date.now() - recordingStartTimeRef.current
+        recordingStartTimeRef.current = null
+      }
+      
+      setIsRecording(false)
+      setRecordingStatus('Processing recording...')
+      
+      addDebugLog('Video recording stopped successfully')
+      
+    } catch (error) {
+      console.error('Error stopping video recording:', error)
+      setRecordingStatus(`Failed to stop recording: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+
+  const downloadRecordedVideo = () => {
+    if (!recordedVideoUrl) {
+      console.log('No recorded video to download')
+      return
+    }
+
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const filename = `daydream-recording-${timestamp}.webm`
+      
+      const a = document.createElement('a')
+      a.href = recordedVideoUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      
+      addDebugLog('Video download initiated', { filename })
+      
+    } catch (error) {
+      console.error('Error downloading video:', error)
+    }
+  }
+
+  const clearRecordedVideo = () => {
+    if (recordedVideoUrl) {
+      URL.revokeObjectURL(recordedVideoUrl)
+    }
+    setRecordedVideoUrl(null)
+    setRecordingStatus('Ready to record')
+    addDebugLog('Recorded video cleared')
+  }
+
+  // Function to highlight the iframe area
+  const highlightIframeArea = () => {
+    const iframe = outputPlayerRef.current
+    if (!iframe) return
+
+    // Add a temporary highlight effect
+    iframe.style.border = '3px solid #ef4444'
+    iframe.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.5)'
+    
+    // Remove highlight after 3 seconds
+    setTimeout(() => {
+      iframe.style.border = ''
+      iframe.style.boxShadow = ''
+    }, 3000)
+  }
+
 
   const handleStartWebRTC = async () => {
     await startWebRTCStream()
@@ -394,7 +603,6 @@ const Studio: React.FC = () => {
       await startCamera()
       await startWebRTCStream()
       await startSpeechRecognition() // Start speech-to-text
-      setIsRecording(true)
       setIsConnected(true)
     } catch (error) {
       console.error('Failed to start recording/streaming:', error)
@@ -409,7 +617,9 @@ const Studio: React.FC = () => {
     try {
       await stopStream()
       stopSpeechRecognition() // Stop speech-to-text
-      setIsRecording(false)
+      if (isRecording) {
+        stopVideoRecording() // Stop video recording if active
+      }
     } catch (error) {
       console.error('Failed to stop recording/streaming:', error)
     } finally {
@@ -496,14 +706,14 @@ const Studio: React.FC = () => {
     }
     
     // Log the parameters being sent
-    console.log('🎨 Sending parameters to Daydream API:');
+    console.log('🎨 Sending parameters to Vox API:');
     console.log('📝 Prompt:', prompt);
     
     await updateParameters(params)
   }
 
   return (
-    <div className={`${theme === 'dark' ? 'bg-black text-white' : 'bg-white text-gray-900'} min-h-screen`}>
+    <div className={`${theme === 'dark' ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'} min-h-screen`}>
       <ReusableHeader />
       
       {/* Top Navigation Bar - Inspired by video editing interface */}
@@ -512,15 +722,7 @@ const Studio: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">🎲 Seed:</span>
-              <input
-                type="number"
-                value={seed}
-                onChange={(e) => setSeed(parseInt(e.target.value))}
-                min="0"
-                max="999999"
-                className="w-20 text-center font-mono text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
               <Button 
                 onClick={generateRandomSeed} 
                 variant="ghost" 
@@ -529,11 +731,21 @@ const Studio: React.FC = () => {
               >
                 🎲
             </Button>
+                 Seed:</span>
+              <input
+                type="number"
+                value={seed}
+                onChange={(e) => setSeed(parseInt(e.target.value))}
+                min="0"
+                max="999999"
+                className="w-20 text-center font-mono text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              />
+              
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
               {/* Stream Status Indicators */}
               <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                 streamData ? 'bg-green-500' : 'bg-gray-400'
@@ -560,6 +772,21 @@ const Studio: React.FC = () => {
           
           <div className="flex items-center gap-4">
             
+            {recordedVideoUrl && (
+              <>
+                <Button 
+                  onClick={() => {
+                    downloadRecordedVideo();
+                    clearRecordedVideo();
+                  }}
+                  className="px-4 py-2 rounded-lg font-medium transition-all duration-200 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white"
+                >
+                  📥 Download
+                </Button>
+                
+              </>
+            )}
+            
             <Button 
               onClick={createStream}
               disabled={!!streamData}
@@ -569,7 +796,6 @@ const Studio: React.FC = () => {
                   : 'bg-gradient-to-r from-red-500 to-purple-600 hover:from-red-600 hover:to-purple-700 text-white'
               }`}
             >
-              
               {streamData ? 'Started' : 'Start'}
             </Button>
           </div>
@@ -578,7 +804,7 @@ const Studio: React.FC = () => {
       </div>
 
         {/* Main Studio Layout */}
-        <div className={`${theme === 'dark' ? 'bg-gray-900' : 'bg-gray-100'} flex h-[calc(100vh-140px)]`}>
+        <div className={`${theme === 'dark' ? 'bg-gray-950' : 'bg-gray-100'} flex h-[calc(100vh-140px)]`}>
           <div className="max-w-7xl mx-auto flex w-full">
         {/* Left Sidebar - Camera Feed */}
         <div className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border-r w-80 flex flex-col`}>
@@ -611,16 +837,41 @@ const Studio: React.FC = () => {
               </CardContent>
             </Card>
 
+            
+            {/* Recording Status */}
+            {recordingStatus !== 'Ready to record' && (
+              <Card className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${
+                      isRecording ? 'bg-red-500 animate-pulse' : 'bg-green-500'
+                    }`}></div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {recordingStatus}
+                    </span>
+                  </div>
+                  {recordingDurationRef.current > 0 && (
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Duration: {(recordingDurationRef.current / 1000).toFixed(1)}s
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+            
             {/* Stream Controls */}
             <StreamControls
               isConnected={isConnected}
-              isRecording={isRecording}
               isStreaming={isStreaming}
               isLoading={isLoading}
               onUnifiedStart={handleUnifiedStart}
               onStartWebRTC={handleStartWebRTC}
               onUnifiedStop={handleUnifiedStop}
               isStreamCreated={!!streamData}
+              isRecording={isRecording}
+              onStartRecording={startIframeRecording}
+              onStopRecording={stopVideoRecording}
+              hasStreamData={!!streamData?.output_playback_id}
             />
           </div>
         </div>
@@ -651,20 +902,43 @@ const Studio: React.FC = () => {
                     </div>
                   )}
                   
-                  {/* AI Prompt Overlay */}
-                  <div className="absolute bottom-4 left-4 right-4 bg-black bg-opacity-75 rounded-lg p-2">
-                    <div className="space-y-3">
-                      {/* AI Prompt Input */}
-                      <div>
-                        <textarea
-                          value={prompt}
-                          onChange={(e) => setPrompt(e.target.value)}
-                          placeholder="Describe the transformation you want... (e.g., 'Transform me into a cyberpunk character')"
-                          className="w-full h-16 bg-white bg-opacity-10 border border-white border-opacity-20 rounded-lg px-3 py-2 text-white placeholder-white placeholder-opacity-60 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
+                  {/* Recording Guide Overlay */}
+                  {showRecordingGuide && (
+                    <div className="absolute inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 text-center">
+                        <div className="text-4xl mb-4">🎯</div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          Select AI Video Area
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                          When the browser asks what to share, select <strong>"Entire screen"</strong> or <strong>"Window"</strong>, then choose the area containing the AI video output.
+                        </p>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 mb-4">
+                          <p className="text-xs text-blue-700 dark:text-blue-300">
+                            💡 <strong>Tip:</strong> Look for the video area with the AI transformation - it should be the main content area in the center.
+                          </p>
+                        </div>
+                        <Button 
+                          onClick={() => setShowRecordingGuide(false)}
+                          variant="outline"
+                          className="text-sm"
+                        >
+                          Got it!
+                        </Button>
                       </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {/* AI Prompt Overlay */}
+                
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 w-[90%] flex justify-center pointer-events-none">
+                    <div className="bg-black bg-opacity-70 rounded-md px-6 py-2 text-white text-lg font-medium shadow-lg max-w-2xl w-full text-center truncate">
+                      {audioFeatures.transcript
+                        ? audioFeatures.transcript
+                        : <span className="opacity-60">This is a subtitle bar</span>
+                      }
+                     </div>
+                   </div>
                 </div>
               </CardContent>
             </Card>
@@ -674,7 +948,7 @@ const Studio: React.FC = () => {
         {/* Right Sidebar - AI Parameters and Controls */}
         <div className={`${theme === 'dark' ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border-l w-80 flex flex-col`}>
           
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 overflow-y-auto p-4 hide-scrollbar">
             {/* Audio Features Display */}
             <AudioFeaturesDisplay
               volume={audioFeatures.volume}

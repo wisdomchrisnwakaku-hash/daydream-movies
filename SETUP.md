@@ -1,4 +1,4 @@
-# Daydream Stream App Setup
+# Vox - Voice to Scene Generator Setup
 
 ## Quick Setup
 
@@ -9,7 +9,7 @@
 
 2. **Set up environment variables:**
    - Copy `env.example` to `.env`
-   - Replace `REPLACE_WITH_YOUR_API_KEY` with your actual Daydream API key
+   - Replace `REPLACE_WITH_YOUR_API_KEY` with your actual Vox API key
 
 3. **Start the development server:**
    ```bash

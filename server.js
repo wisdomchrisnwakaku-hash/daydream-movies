@@ -3,9 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { AssemblyAI } from 'assemblyai';
 import cors from 'cors';
-import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { YIN } from 'pitchfinder';
 
@@ -26,22 +24,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static('dist')); // Serve built frontend
 
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
-  }
-});
-
-const upload = multer({ storage });
-
 // AssemblyAI client
 const client = new AssemblyAI({
   apiKey: process.env.ASSEMBLYAI_API_KEY || "ae9025de09ce45cbb323225c6c96a9b5"
@@ -58,6 +40,7 @@ const audioFeatureHistory = new Map();
 
 // Initialize pitch detector
 const detectPitch = YIN({ sampleRate: 16000 });
+
 
 // Function to calculate RMS volume from audio buffer
 function calculateRMSVolume(audioBuffer) {
@@ -133,38 +116,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Speech-to-text server is running' });
 });
 
-// File upload transcription endpoint
-app.post('/api/transcribe-file', upload.single('audio'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No audio file provided' });
-    }
 
-    const audioUrl = `http://localhost:3001/${req.file.path}`;
-    
-    const transcript = await client.transcripts.transcribe({
-      audio: audioUrl,
-      language_detection: true,
-      speaker_labels: true,
-      sentiment_analysis: true
-    });
 
-    // Clean up uploaded file
-    fs.unlinkSync(req.file.path);
 
-    res.json({
-      text: transcript.text,
-      confidence: transcript.confidence,
-      words: transcript.words,
-      speakers: transcript.utterances,
-      sentiment: transcript.sentiment_analysis_results
-    });
 
-  } catch (error) {
-    console.error('Transcription error:', error);
-    res.status(500).json({ error: 'Transcription failed', details: error.message });
-  }
-});
+
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
@@ -320,13 +276,10 @@ io.on('connection', (socket) => {
         
         // Calculate RMS volume for DIY volume detection
         const volume = calculateRMSVolume(audioBuffer);
-        console.log('🔊 Volume:', volume.toFixed(2));
         
         // Detect pitch
         const pitch = getPitch(audioBuffer);
-        if (pitch) {
-          console.log('🎵 Pitch:', pitch.toFixed(1), 'Hz');
-        }
+        
         
         // Store audio features with timestamp for precise speech analysis
         const timestamp = Date.now();
@@ -366,10 +319,29 @@ io.on('connection', (socket) => {
           features.pitches.shift();
         }
         
-        // Emit volume data
+        // Calculate rolling averages for real-time emotion detection
+        const avgVolume = features.volumes.reduce((sum, v) => sum + v, 0) / features.volumes.length;
+        const validPitches = features.pitches.filter(p => p > 0);
+        const avgPitch = validPitches.length > 0 ? 
+          validPitches.reduce((sum, p) => sum + p, 0) / validPitches.length : 0;
+        
+        // Simple real-time emotion detection based on current audio features
+        let realtimeEmotion = { emotion: "neutral", confidence: 0.5, visualStyle: "pastel, clean line art" };
+        if (features.volumes.length >= 3) { // Only after we have some data
+          realtimeEmotion = classifyEmotion({ 
+            volume: avgVolume, 
+            pitch: avgPitch, 
+            wpm: 0 // No WPM for real-time detection
+          });
+        }
+        
+        // Emit volume data with real-time emotion
         socket.emit('audio-volume', {
           volume: volume,
           pitch: pitch,
+          emotion: realtimeEmotion.emotion,
+          confidence: realtimeEmotion.confidence,
+          visualStyle: realtimeEmotion.visualStyle,
           timestamp: new Date().toISOString()
         });
         

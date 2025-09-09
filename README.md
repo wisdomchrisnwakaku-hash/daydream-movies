@@ -1,10 +1,10 @@
-# Daydream Stream App
+# Vox - Voice to Scene Generator
 
-A fun and user-friendly web application that lets you stream video from your webcam through the Daydream StreamDiffusion AI pipeline and view the transformed output in real-time.
+A fun and user-friendly web application that lets you stream video from your webcam through the Vox StreamDiffusion AI pipeline and view the transformed output in real-time.
 
 ## Features
 
-- 🎬 Create AI-powered video streams using the Daydream API
+- 🎬 Create AI-powered video streams using the Vox API
 - 📹 Capture video from your webcam using WebRTC
 - 🎥 View AI-transformed output using the Livepeer player
 - 🎛️ Real-time parameter adjustment for StreamDiffusion
@@ -82,7 +82,7 @@ npx http-server -p 8000
 
 - Built with ViteJS for fast development
 - Uses WebRTC for real-time video streaming
-- Integrates with Daydream API for AI processing
+- Integrates with Vox API for AI processing
 - Embeds Livepeer player for output display
 - Responsive design works on desktop and mobile
 
@@ -95,7 +95,7 @@ npx http-server -p 8000
 
 ## API Reference
 
-The app uses the Daydream API endpoints:
+The app uses the Vox API endpoints:
 - `POST /v1/streams` - Create a new stream
 - `POST /beta/streams/{id}/prompts` - Update stream parameters
 

@@ -13,12 +13,12 @@ const About: React.FC = () => {
           <Card className="shadow-lg border-0 bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="text-3xl font-bold text-gray-800 dark:text-white">
-                About Daydream Movies
+                About Vox
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                Daydream Movies is the world's first real-time Storytelling Scene Generator designed to revolutionize how content creators 
+                Vox is the world's first real-time Storytelling Scene Generator designed to revolutionize how content creators 
                 tell stories. Our mission is to make cinematic storytelling accessible 
                 to everyone, regardless of their technical expertise.
               </p>
@@ -47,7 +47,7 @@ const About: React.FC = () => {
               
               <div className="bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 p-6 rounded-lg">
                 <h3 className="text-xl font-semibold text-gray-800 dark:text-white mb-3">
-                  Why Choose Daydream Movies?
+                  Why Choose Vox?
                 </h3>
                 <ul className="space-y-2 text-gray-600 dark:text-gray-300">
                   <li>• AI-powered storytelling that responds to your voice and tone</li>

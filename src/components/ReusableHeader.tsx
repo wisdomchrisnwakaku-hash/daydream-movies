@@ -1,6 +1,5 @@
 import React from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Play } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import { useTheme } from '@/contexts/ThemeContext'
 
@@ -45,18 +44,6 @@ const ReusableHeader: React.FC = () => {
               }`}
             >
               Studio
-            </Link>
-            <Link 
-              to="/about" 
-              className={`transition-colors ${
-                isActive('/about') 
-                  ? 'text-red-500 font-semibold' 
-                  : theme === 'dark' 
-                    ? 'text-white hover:text-red-500' 
-                    : 'text-gray-700 hover:text-red-500'
-              }`}
-            >
-              About
             </Link>
             <Link 
               to="/contact" 
